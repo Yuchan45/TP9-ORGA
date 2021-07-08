@@ -1,3 +1,7 @@
+;ARREGLAR LO DEL RET DEL MAIN, SACAR TODAS LAS FUNCIONES A AFUERDA DE LOS TAGS DEL MAIN. SOLUCIONANDO EL PROBLEMA DE QUYE SE EJECUTA EL CODIGO DE LAS FUNCIONES AL FINAL. SACAR EL JMP END OF MAIN.
+
+
+
 global	main
 
 extern  puts
@@ -195,9 +199,54 @@ add     rsp,32
 fin_validar_long_op_inicial:
 ret  ;  ret del validar_long_op_inicial
 
+leer_archivo:
+    ;Se encarga de leer el archivo e ir actualizando la matriz con los datos que va hallando.
+    leerRegistro:
+    ;mov     rcx,registro            ;Param 1: dir area de memoria donde va a copiar.
+    ;mov     rdx,17                  ;Param 2: longitud del registro. Osea de lo que va a recibir. 2bytes para los dos chars del dia, 1byte para la semana y 20 para la descripcion.
+    ;mov     r8,1                    ;Param 3: Cantidad de registros. En realidad creo que es de a cuantos bytes tiene que leer. De a uno. uno por uno.
+    ;mov     r9,qword[handle_datos]
 
+    mov     rcx,registro
+    mov     rdx,17
+    mov     r8,qword[handle_datos]
+
+    sub     rsp,32
+    ;call    fread                   ; Leo registro. Devuelve en rax la cantidad de bytes leidos. El fread se encarga de avanzar las lineas a leer, no hace falta decir que lea la prox linea o algo asi,
+    call    fgets
+    add     rsp,32 
+
+
+    cmp     rax,0                   ; El rax va a tener 0 cuando el fread lea un linea vacia. Osea el fin del archivo.
+    jle     eof                     ; EOF
+    jmp     leerRegistro            ; Volvemo a leer la siguiente linea
+
+ eof:
+    ; Cierro el archivo cuando llega al fin del archivo
+    mov     rcx,qword[handle_datos]   ; Param 1: Handler del archivo
+    sub     rsp,32
+    call    fclose
+    add     rsp,32
+
+mov		rcx,msj_cierre_ok  ; printf - Cierre de archivo ok.
+sub		rsp,32
+call	puts
+add		rsp,32
+
+    ret
 
 ret  ; ret del main
 
 
 
+mov     rcx,msj_imprimo_operando_archivo
+mov     rdx,operando_archivo
+sub     rsp,32
+call    printf
+add     rsp,32    
+
+mov     rcx,msj_imprimo_operador
+mov     rdx,operador
+sub     rsp,32
+call    printf
+add     rsp,32   
