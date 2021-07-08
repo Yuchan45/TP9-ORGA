@@ -6,6 +6,7 @@ extern  printf
 extern  fopen
 extern  fclose
 extern  fread
+extern  fwrite
 extern  fgets
 extern  sscanf
 
@@ -15,6 +16,7 @@ section     .data  ; Variables con valor inicial
 	modo_apertura_datos		    db	"r",0		;read | texto | abrir o error
 	msj_err_abrir_datos	        db	"Error en apertura de archivo de datos",10,0
     handle_datos	            dq	0
+
 
     msj_ingresar_operando_inicial           db  "- Ingrese el operando inicial (solo caracteres 0 o 1)(16 bytes): ",0
     msj_operador_inicial_invalido           db  " * Operador inicial invalido!!",10,0
@@ -41,15 +43,15 @@ section     .data  ; Variables con valor inicial
     registro                    times   0   db  ''
         operando_archivo        times   16   db  ' '   ; -Operando (16 digitos)
         operador                times	1	db ' '     ; -Operador (1 digito)
-        EOL			            times	1	db ' '	;Byte para guardar el fin de linea q está en el archivo
-        ZERO_BINA		        times	1	db ' '	;Byte para guardar el 0 binario que agrega la fgets
+        ;EOL			            times	1	db ' '	;Byte para guardar el fin de linea q está en el archivo
+        ;ZERO_BINA		        times	1	db ' '	;Byte para guardar el 0 binario que agrega la fgets
     ;
 
 section     .bss  ; Variables sin valor inicial
     operando_inicial            resb    500
     dato_valido		            resb	1
     operando_inicial_valido     resb    1
-    registro_test		resb	17
+    ;registro_test		resb	17
     registro_valido             resb    1
 
 section     .text
@@ -196,39 +198,45 @@ add		rsp,32
 
 leer_archivo:
     ;Se encarga de leer el archivo e ir actualizando la matriz con los datos que va hallando.
-    leer_registro:
-    mov     rcx,registro
-    mov     rdx,18              
-    mov     r8,[handle_datos] 
-	sub		rsp,32      
-    call    fgets
-	add		rsp,32
+ leer_registro:
+    mov     rcx,registro            ;Param 1: dir area de memoria donde va a copiar.
+    mov     rdx,17                  ;Param 2: longitud del registro. Osea de lo que va a recibir. 2bytes para los dos chars del dia, 1byte para la semana y 20 para la descripcion.
+    mov     r8,1                    ;Param 3: Cantidad de registros. En realidad creo que es de a cuantos bytes tiene que leer. De a uno. uno por uno.
+    mov     r9,qword[handle_datos]
 
-    cmp     rax,0
-    jle     cerrar_archivos	
+    sub     rsp,32
+    call    fread                   ; Leo registro. Devuelve en rax la cantidad de bytes leidos. El fread se encarga de avanzar las lineas a leer, no hace falta decir que lea la prox linea o algo asi,
+    add     rsp,32 
 
-;mov 	rcx,msj_leyendo
-;sub		rsp,32
-;call	puts  
-;add		rsp,32
+    cmp     rax,0                   ; El rax va a tener 0 cuando el fread lea un linea vacia. Osea el fin del archivo.
+    jle     cerrar_archivos                     ; EOF
 
-
-	;Valido registro
-;	call	validar_registro
-;    cmp		byte[registro_valido],'N'
-;    je		leer_registro
- 
+mov 	rcx,msj_leyendo
+sub		rsp,32
+call	puts  
+add		rsp,32
 
 
-mov     rcx,msj_imprimo_operando_archivo
-mov     rdx,operando_archivo
-sub     rsp,32
-call    printf
-add     rsp,32    
+    call    validar_registro                  ; Rutina interna para validar si la linea leida es valida. Devuelve 'S' en la variable "esValid" en caso de valido, y 'N' en caso contrario.
+    cmp     byte[registro_valido],'S'
+    jne     leer_registro            ; El fread se encarga de avanzar las lineas a leer, no hace falta decir que lea la prox linea o algo asi. Asi que mandamos a leer denuevo asi noma
+
+;mov     rcx,msj_imprimo_operando_archivo
+;mov     rdx,operando_archivo
+;sub     rsp,32
+;call    printf
+;add     rsp,32   
+
+;mov     rcx,msj_imprimo_operador
+;mov     rdx,operador
+;sub     rsp,32
+;call    printf
+;add     rsp,32   
 
 
 
-    jmp    leer_registro
+    jmp     leer_registro            ; Volvemo a leer la siguiente linea 
+
     ret
 
     
