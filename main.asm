@@ -299,17 +299,6 @@ add		rsp,32
 next:
     jmp     leer_registro            ; Volvemo a leer la siguiente linea 
 
-cerrar_archivos:
-    mov     rcx,[handle_datos]
-	sub		rsp,32
-    call    fclose
-	add		rsp,32
-    mov		rcx,msj_cierre_ok  ; printf - Cierre de archivo ok.
-    sub		rsp,32
-    call	puts
-    add		rsp,32
-    ret
-
     
 operacion_and:
     mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0.
@@ -391,9 +380,17 @@ operacion_xor:
     ; Ahora realizo la operacion entre las cadenas[i] de ambos operandos y copio su resultado en un auxiliar (el cual luego pisara el operando inicial)
     mov     al,[operando_inicial + rsi] 
     mov     bl,[operando_archivo + rsi]
-    xor     al,bl 
-    mov     [aux_operando + rsi],al
+    ;xor     al,bl 
+    ;mov     [aux_operando + rsi],al
 
+    cmp     al,bl
+    jne     pongo_cero
+    mov    byte[aux_operando + rsi],'0'
+    jmp     siguiente
+    pongo_cero:
+    mov    byte[aux_operando + rsi],'1'
+
+    siguiente:
     inc     rsi ; rsi++
     jmp     cmp_char_xor 
 
@@ -431,3 +428,13 @@ error_al_abrir_archivo:
 	add		rsp,32
 	jmp		fin_de_programa
 
+cerrar_archivos:
+    mov     rcx,[handle_datos]
+	sub		rsp,32
+    call    fclose
+	add		rsp,32
+    mov		rcx,msj_cierre_ok  ; printf - Cierre de archivo ok.
+    sub		rsp,32
+    call	puts
+    add		rsp,32
+    ret

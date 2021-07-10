@@ -39,6 +39,9 @@ section     .data  ; Variables con valor inicial
     msj_imprimo_operador            db  "-Operador del archivo: %s",10,0
 
     msj_logico            db  "RESULTADO LOGICO: %i",10,0
+    aa   db  '1',0
+    bb   db  '1',0
+
 
     ; Registro del archivo:  (POR ALGUNA RAZON ESTO TIENE QUE IR ABAJO DE TODO EL SECTION DATA, SINO SE GUARDA LA SIG LINEA TAMBIEN)
     registro                    times   0   db  ''
@@ -61,8 +64,9 @@ section     .bss  ; Variables sin valor inicial
 section     .text
 
 main:
-    mov     al,0
-    xor     al,0
+    mov     al,0000b
+    mov     bl,0001b
+    xor     al,bl
     mov     [dato_a],al
 
 mov     rcx,0
