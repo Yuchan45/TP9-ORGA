@@ -35,6 +35,7 @@ section     .data  ; Variables con valor inicial
     op_reg_test                              db      '9876543210987654'
     caracter                                 db      '1'
     contador_caracter                        dq       0
+    contador_caracter2                       dq       0
     mensaje_chars_uno                        db      'Hay %lli unos en el string.',0
 
  
@@ -266,8 +267,12 @@ add		rsp,32
     mov     al,[operando_inicial + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
     cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
     jne     sig_char
-    inc qword[contador_caracter] ; contador_caracter ++
-
+;    inc qword[contador_caracter] ; contador_caracter ++
+;Si llego aca es xq encontre un 1. Busco si hay un 1 en el char del op_archivo tmb.
+    mov     al,[operando_archivo + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
+    cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
+    jne     sig_char
+    inc qword[contador_caracter]
     sig_char:
     inc     rsi ; rsi++
     jmp     cmp_char ; Jmp incondicional a un rotulo que pongo ahora (Si, codie hasta el jmp y ahora pongo un rotulo a donde quiero ir).
@@ -278,15 +283,14 @@ fin_str:
     sub     rsp,32
     call    printf
     add     rsp,32
+    mov     rcx,mensaje_chars_uno
+
     jmp     cerrar_archivos
 
 
-
-
-
-
     jmp     leer_registro            ; Volvemo a leer la siguiente linea 
-    cerrar_archivos:
+
+cerrar_archivos:
     mov     rcx,[handle_datos]
 	sub		rsp,32
     call    fclose
@@ -295,6 +299,37 @@ fin_str:
     ret
 
     
+operacion_and:
+    mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0. Podriamos usar el rsi como contador de long_texto. Pero para el ejemplo mejor no.
+    cmp_char:
+    cmp     byte[operando_inicial + rsi],0 ; Texto tiene el inicio del campo texto, y rsi (indice) seria el desplazamiento. Estoy obteniendo caracter por caracter. caracter = 1byte = 8bits.
+    je      fin_str ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
+
+    ; Ahora necesito ver si el caracter por el que voy es el ingresado para contarlo.
+    mov     al,[operando_inicial + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
+    cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
+    jne     sig_char
+;    inc qword[contador_caracter] ; contador_caracter ++
+;Si llego aca es xq encontre un 1. Busco si hay un 1 en el char del op_archivo tmb.
+    mov     al,[operando_archivo + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
+    cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
+    jne     sig_char
+    inc qword[contador_caracter]
+    sig_char:
+    inc     rsi ; rsi++
+    jmp     cmp_char ; Jmp incondicional a un rotulo que pongo ahora (Si, codie hasta el jmp y ahora pongo un rotulo a donde quiero ir).
+
+    ret ; Ret del operacion_and
+
+fin_str:
+    mov     rcx,mensaje_chars_uno
+    mov     rdx,[contador_caracter]  ; Si ves raro estom de que este en rcx y rdc, mira el ppt que te muestra como usar el printf. printf imprime lo que hay en el rcx, y el rdx, r8, etc son los parametros del printf.
+    sub     rsp,32
+    call    printf
+    add     rsp,32
+    mov     rcx,mensaje_chars_uno
+    ret
+
 
 validar_registro:
     mov    byte[registro_valido],'S' 

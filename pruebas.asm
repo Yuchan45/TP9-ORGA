@@ -61,9 +61,9 @@ section     .bss  ; Variables sin valor inicial
 section     .text
 
 main:
-    mov     ax,1111111111111111b
-    ;and     ah,0010b
-    mov     [dato_a],ax
+    mov     al,0
+    xor     al,0
+    mov     [dato_a],al
 
 mov     rcx,0
 mov     rdx,0
