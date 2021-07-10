@@ -50,11 +50,12 @@ section     .data  ; Variables con valor inicial
 	msj_guarde_operando_inicial      db " - Operando inicial guardado - ",0
 	msj_leyendo     	             db	"leyendo...",0
     imprimo_operando_inicial         db  "-Operando inicial ingresado: %s",10,0
-    msj_imprimo_operando_archivo     db  "-Operando del archivo: %s",10,0
-    msj_imprimo_operador             db  "-Operador del archivo: %s",10,0
-    msj_tengo_x                      db "Tengo una X...",0
-    msj_tengo_o                      db "Tengo una O...",0
-    msj_tengo_n                      db "Tengo una N...",0
+    msj_resultado                    db  "-Resultado parcial:          %s",10,0
+    msj_imprimo_operando_archivo     db  "-Operando del archivo:       %s",10,0
+    msj_imprimo_operador             db  "-Operador del archivo:       %s",10,0
+    msj_tengo_x                      db "-Operacion a realizar:       X (XOR)",0
+    msj_tengo_o                      db "-Operacion a realizar:       O (OR)",0
+    msj_tengo_n                      db "-Operacion a realizar:       N (AND)",0
     msj_problema                     db "Problema...",0
     msj_operando_aux                 db  "-Operando auxiliar: %s",10,0
 
@@ -82,12 +83,6 @@ main:
 
 ; volver_a_solicitar:
     call    solicitar_operando_inicial
-mov     rcx,imprimo_operando_inicial
-mov     rdx,operando_inicial
-sub     rsp,32
-call    printf
-add     rsp,32
-
 ;    call    validar_operando_inicial
 ;    cmp     byte[dato_valido],'N'
 ;    je      volver_a_solicitar
@@ -100,6 +95,12 @@ mov		rcx,msj_apertura_ok  ; printf - Apertura Listado ok.
 sub		rsp,32
 call	puts
 add		rsp,32
+
+mov     rcx,imprimo_operando_inicial
+mov     rdx,operando_inicial
+sub     rsp,32
+call    printf
+add     rsp,32
 
     call    leer_archivo
 
@@ -252,17 +253,13 @@ sub     rsp,32
 call    printf
 add     rsp,32   
 
-mov     rcx,msj_imprimo_operador
-mov     rdx,operador
-sub     rsp,32
-call    printf
-add     rsp,32   
+;mov     rcx,msj_imprimo_operador
+;mov     rdx,operador
+;sub     rsp,32
+;call    printf
+;add     rsp,32   
 
         ; YA TENGO LOS DATOS NECESARIOS. ACA DEBERIA HACER LA OPERACION.
-mov		rcx,msj_inicio
-sub		rsp,32
-call	puts
-add		rsp,32
 
     mov     al,[operador]
     cmp     al,[opr_xor]
@@ -272,18 +269,14 @@ add		rsp,32
     cmp     al,[opr_and]
     je      hacer_and
 
-mov     rcx,msj_problema  ;  Encontre una letra, una operacion que no es ni X,O,N.
-sub     rsp,32
-call    puts
-add     rsp,32   
-jmp     cerrar_archivos
+jmp     cerrar_archivos  ; Si no encotrne letra valida, cierro todo.
 
 hacer_xor:
 mov		rcx,msj_tengo_x  
 sub		rsp,32
 call	puts
 add		rsp,32
-;    call    operacion_xor
+    call    operacion_xor
     jmp     next
 
 hacer_or:
@@ -291,7 +284,7 @@ mov		rcx,msj_tengo_o
 sub		rsp,32
 call	puts
 add		rsp,32
-;    call    operacion_or
+    call    operacion_or
     jmp     next
 
 hacer_and:
@@ -311,15 +304,18 @@ cerrar_archivos:
 	sub		rsp,32
     call    fclose
 	add		rsp,32
-
+    mov		rcx,msj_cierre_ok  ; printf - Cierre de archivo ok.
+    sub		rsp,32
+    call	puts
+    add		rsp,32
     ret
 
     
 operacion_and:
     mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0.
-    cmp_char:
+    cmp_char_and:
     cmp     byte[operando_inicial + rsi],0 
-    je      fin_str ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
+    je      fin_str_and ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
 
     ; Ahora realizo la operacion entre las cadenas[i] de ambos operandos y copio su resultado en un auxiliar (el cual luego pisara el operando inicial)
     mov     al,[operando_inicial + rsi] 
@@ -328,21 +324,21 @@ operacion_and:
     mov     [aux_operando + rsi],al
 
     inc     rsi ; rsi++
-    jmp     cmp_char 
+    jmp     cmp_char_and 
 
-fin_str:
+    fin_str_and:
     ; Ahora tengo que pisar el contenido de operando_inicial con el aux_operando. Porque hay que seguir iterando y realizando operaciones luego.
-    mov     rcx,msj_operando_aux
-    mov     rdx,aux_operando  
-    sub     rsp,32
-    call    printf
-    add     rsp,32
+;    mov     rcx,msj_operando_aux
+;    mov     rdx,aux_operando  
+;    sub     rsp,32
+;    call    printf
+;    add     rsp,32
     ; Piso el contenido de operando_inicio con el de aux_operando
     mov     rcx,16                 ;Indico cuandos bytes tengo que copiar
     lea     rsi,[aux_operando]     ; Origen
     lea     rdi,[operando_inicial] ; Destino
     rep     movsb
-    mov     rcx,imprimo_operando_inicial
+    mov     rcx,msj_resultado
     mov     rdx,operando_inicial  
     sub     rsp,32
     call    printf
@@ -350,6 +346,76 @@ fin_str:
 
     ret ; Ret del operacion_and
 
+operacion_or:
+    mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0.
+    cmp_char_or:
+    cmp     byte[operando_inicial + rsi],0 
+    je      fin_str_or ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
+
+    ; Ahora realizo la operacion entre las cadenas[i] de ambos operandos y copio su resultado en un auxiliar (el cual luego pisara el operando inicial)
+    mov     al,[operando_inicial + rsi] 
+    mov     bl,[operando_archivo + rsi]
+    or      al,bl 
+    mov     [aux_operando + rsi],al
+
+    inc     rsi ; rsi++
+    jmp     cmp_char_or 
+
+    fin_str_or:
+    ; Ahora tengo que pisar el contenido de operando_inicial con el aux_operando. Porque hay que seguir iterando y realizando operaciones luego.
+;    mov     rcx,msj_operando_aux
+;    mov     rdx,aux_operando  
+;    sub     rsp,32
+;    call    printf
+;    add     rsp,32
+    ; Piso el contenido de operando_inicio con el de aux_operando
+    mov     rcx,16                 ;Indico cuandos bytes tengo que copiar
+    lea     rsi,[aux_operando]     ; Origen
+    lea     rdi,[operando_inicial] ; Destino
+    rep     movsb
+    mov     rcx,msj_resultado
+    mov     rdx,operando_inicial  
+    sub     rsp,32
+    call    printf
+    add     rsp,32
+
+    ret ; Ret del operacion_or
+
+
+operacion_xor:
+    mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0.
+    cmp_char_xor:
+    cmp     byte[operando_inicial + rsi],0 
+    je      fin_str_xor ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
+
+    ; Ahora realizo la operacion entre las cadenas[i] de ambos operandos y copio su resultado en un auxiliar (el cual luego pisara el operando inicial)
+    mov     al,[operando_inicial + rsi] 
+    mov     bl,[operando_archivo + rsi]
+    xor     al,bl 
+    mov     [aux_operando + rsi],al
+
+    inc     rsi ; rsi++
+    jmp     cmp_char_xor 
+
+    fin_str_xor:
+    ; Ahora tengo que pisar el contenido de operando_inicial con el aux_operando. Porque hay que seguir iterando y realizando operaciones luego.
+;    mov     rcx,msj_operando_aux
+;    mov     rdx,aux_operando  
+;    sub     rsp,32
+;    call    printf
+;    add     rsp,32
+    ; Piso el contenido de operando_inicio con el de aux_operando
+    mov     rcx,16                 ;Indico cuandos bytes tengo que copiar
+    lea     rsi,[aux_operando]     ; Origen
+    lea     rdi,[operando_inicial] ; Destino
+    rep     movsb
+    mov     rcx,msj_resultado
+    mov     rdx,operando_inicial  
+    sub     rsp,32
+    call    printf
+    add     rsp,32
+
+    ret ; Ret del operacion_xor
 
 
 validar_registro:
