@@ -28,12 +28,15 @@ section     .data  ; Variables con valor inicial
     msj_long_input_valido           db  " * Longitud de operando valida: %lli",10,0
     msj_long_input_invalido         db  " * Longitud de operando invalida: %lli",10,0
 
-    equis                           db      'X'
+    opr_xor                           db      'X',0    ;Operador XOR
+    opr_or                            db      'O',0    ;Operador OR
+    opr_and                           db      'N',0    ;Operador AND
 
 
-    op_incial_test                           db      '1234567890123456'
-    op_reg_test                              db      '9876543210987654'
-    caracter                                 db      '1'
+    op_incial_test                           db      '1234567890123456',0
+    op_reg_test                              db      '9876543210987654',0
+    caracter                                 db      '1',0
+    uno                                 db      '1',0
     contador_caracter                        dq       0
     contador_caracter2                       dq       0
     mensaje_chars_uno                        db      'Hay %lli unos en el string.',0
@@ -52,13 +55,15 @@ section     .data  ; Variables con valor inicial
     msj_tengo_x                      db "Tengo una X...",0
     msj_tengo_o                      db "Tengo una O...",0
     msj_tengo_n                      db "Tengo una N...",0
+    msj_problema                     db "Problema...",0
+    msj_operando_aux                 db  "-Operando auxiliar: %s",10,0
 
 
 
     ; Registro del archivo:  (POR ALGUNA RAZON ESTO TIENE QUE IR ABAJO DE TODO EL SECTION DATA, SINO SE GUARDA LA SIG LINEA TAMBIEN)
     registro                    times   0   db  ''
         operando_archivo        times   16  db  ' '   ; -Operando (16 digitos)
-        operador                times	1	db ' '     ; -Operador (1 digito)
+        operador                times	1	db ' '     ; -Operador (1 digito). 1Byte. 8Bits
         ;EOL			            times	1	db ' '	;Byte para guardar el fin de linea q está en el archivo
         ;ZERO_BINA		        times	1	db ' '	;Byte para guardar el 0 binario que agrega la fgets
     ;
@@ -69,6 +74,7 @@ section     .bss  ; Variables sin valor inicial
     operando_inicial_valido     resb    1
     ;registro_test		resb	17
     registro_valido             resb    1
+    aux_operando                resb    50
 
 section     .text
 
@@ -258,36 +264,46 @@ sub		rsp,32
 call	puts
 add		rsp,32
 
-    mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0. Podriamos usar el rsi como contador de long_texto. Pero para el ejemplo mejor no.
-    cmp_char:
-    cmp     byte[operando_inicial + rsi],0 ; Texto tiene el inicio del campo texto, y rsi (indice) seria el desplazamiento. Estoy obteniendo caracter por caracter. caracter = 1byte = 8bits.
-    je      fin_str ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
+    mov     al,[operador]
+    cmp     al,[opr_xor]
+    je      hacer_xor
+    cmp     al,[opr_or]
+    je      hacer_or
+    cmp     al,[opr_and]
+    je      hacer_and
 
-    ; Ahora necesito ver si el caracter por el que voy es el ingresado para contarlo.
-    mov     al,[operando_inicial + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
-    cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
-    jne     sig_char
-;    inc qword[contador_caracter] ; contador_caracter ++
-;Si llego aca es xq encontre un 1. Busco si hay un 1 en el char del op_archivo tmb.
-    mov     al,[operando_archivo + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
-    cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
-    jne     sig_char
-    inc qword[contador_caracter]
-    sig_char:
-    inc     rsi ; rsi++
-    jmp     cmp_char ; Jmp incondicional a un rotulo que pongo ahora (Si, codie hasta el jmp y ahora pongo un rotulo a donde quiero ir).
+mov     rcx,msj_problema  ;  Encontre una letra, una operacion que no es ni X,O,N.
+sub     rsp,32
+call    puts
+add     rsp,32   
+jmp     cerrar_archivos
 
-fin_str:
-    mov     rcx,mensaje_chars_uno
-    mov     rdx,[contador_caracter]  ; Si ves raro estom de que este en rcx y rdc, mira el ppt que te muestra como usar el printf. printf imprime lo que hay en el rcx, y el rdx, r8, etc son los parametros del printf.
-    sub     rsp,32
-    call    printf
-    add     rsp,32
-    mov     rcx,mensaje_chars_uno
+hacer_xor:
+mov		rcx,msj_tengo_x  
+sub		rsp,32
+call	puts
+add		rsp,32
+;    call    operacion_xor
+    jmp     next
 
-    jmp     cerrar_archivos
+hacer_or:
+mov		rcx,msj_tengo_o 
+sub		rsp,32
+call	puts
+add		rsp,32
+;    call    operacion_or
+    jmp     next
+
+hacer_and:
+mov		rcx,msj_tengo_n 
+sub		rsp,32
+call	puts
+add		rsp,32
+    call    operacion_and
+    jmp     next
 
 
+next:
     jmp     leer_registro            ; Volvemo a leer la siguiente linea 
 
 cerrar_archivos:
@@ -300,35 +316,40 @@ cerrar_archivos:
 
     
 operacion_and:
-    mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0. Podriamos usar el rsi como contador de long_texto. Pero para el ejemplo mejor no.
+    mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0.
     cmp_char:
-    cmp     byte[operando_inicial + rsi],0 ; Texto tiene el inicio del campo texto, y rsi (indice) seria el desplazamiento. Estoy obteniendo caracter por caracter. caracter = 1byte = 8bits.
+    cmp     byte[operando_inicial + rsi],0 
     je      fin_str ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
 
-    ; Ahora necesito ver si el caracter por el que voy es el ingresado para contarlo.
-    mov     al,[operando_inicial + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
-    cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
-    jne     sig_char
-;    inc qword[contador_caracter] ; contador_caracter ++
-;Si llego aca es xq encontre un 1. Busco si hay un 1 en el char del op_archivo tmb.
-    mov     al,[operando_archivo + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
-    cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
-    jne     sig_char
-    inc qword[contador_caracter]
-    sig_char:
-    inc     rsi ; rsi++
-    jmp     cmp_char ; Jmp incondicional a un rotulo que pongo ahora (Si, codie hasta el jmp y ahora pongo un rotulo a donde quiero ir).
+    ; Ahora realizo la operacion entre las cadenas[i] de ambos operandos y copio su resultado en un auxiliar (el cual luego pisara el operando inicial)
+    mov     al,[operando_inicial + rsi] 
+    mov     bl,[operando_archivo + rsi]
+    and     al,bl 
+    mov     [aux_operando + rsi],al
 
-    ret ; Ret del operacion_and
+    inc     rsi ; rsi++
+    jmp     cmp_char 
 
 fin_str:
-    mov     rcx,mensaje_chars_uno
-    mov     rdx,[contador_caracter]  ; Si ves raro estom de que este en rcx y rdc, mira el ppt que te muestra como usar el printf. printf imprime lo que hay en el rcx, y el rdx, r8, etc son los parametros del printf.
+    ; Ahora tengo que pisar el contenido de operando_inicial con el aux_operando. Porque hay que seguir iterando y realizando operaciones luego.
+    mov     rcx,msj_operando_aux
+    mov     rdx,aux_operando  
     sub     rsp,32
     call    printf
     add     rsp,32
-    mov     rcx,mensaje_chars_uno
-    ret
+    ; Piso el contenido de operando_inicio con el de aux_operando
+    mov     rcx,16                 ;Indico cuandos bytes tengo que copiar
+    lea     rsi,[aux_operando]     ; Origen
+    lea     rdi,[operando_inicial] ; Destino
+    rep     movsb
+    mov     rcx,imprimo_operando_inicial
+    mov     rdx,operando_inicial  
+    sub     rsp,32
+    call    printf
+    add     rsp,32
+
+    ret ; Ret del operacion_and
+
 
 
 validar_registro:
