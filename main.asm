@@ -12,7 +12,7 @@ extern  sscanf
 
 
 section     .data  ; Variables con valor inicial
-    archivo_datos		        db	"datos.txt",0
+    archivo_datos		        db	"datos.dat",0
 	modo_apertura_datos		    db	"r",0		;read | texto | abrir o error
 	msj_err_abrir_datos	        db	"Error en apertura de archivo de datos",10,0
     handle_datos	            dq	0
@@ -28,6 +28,9 @@ section     .data  ; Variables con valor inicial
     msj_long_input_valido           db  " * Longitud de operando valida: %lli",10,0
     msj_long_input_invalido         db  " * Longitud de operando invalida: %lli",10,0
 
+    equis                           db      'X'
+
+
 	;*** Mensajes para debug
 	msj_inicio                       db "Iniciando...",0
 	msj_apertura_ok                  db " *** Se ha abierto el archivo exitosamente *** ",10,0
@@ -36,12 +39,16 @@ section     .data  ; Variables con valor inicial
 	msj_leyendo     	             db	"leyendo...",0
     imprimo_operando_inicial         db  "-Operando inicial ingresado: %s",10,0
     msj_imprimo_operando_archivo     db  "-Operando del archivo: %s",10,0
-    msj_imprimo_operador            db  "-Operador del archivo: %s",10,0
+    msj_imprimo_operador             db  "-Operador del archivo: %s",10,0
+    msj_tengo_x                      db "Tengo una X...",0
+    msj_tengo_o                      db "Tengo una O...",0
+    msj_tengo_n                      db "Tengo una N...",0
+
 
 
     ; Registro del archivo:  (POR ALGUNA RAZON ESTO TIENE QUE IR ABAJO DE TODO EL SECTION DATA, SINO SE GUARDA LA SIG LINEA TAMBIEN)
     registro                    times   0   db  ''
-        operando_archivo        times   16   db  ' '   ; -Operando (16 digitos)
+        operando_archivo        times   16  db  ' '   ; -Operando (16 digitos)
         operador                times	1	db ' '     ; -Operador (1 digito)
         ;EOL			            times	1	db ' '	;Byte para guardar el fin de linea q está en el archivo
         ;ZERO_BINA		        times	1	db ' '	;Byte para guardar el 0 binario que agrega la fgets
@@ -110,6 +117,7 @@ solicitar_operando_inicial:
     add     rsp,32
 
     ;Gets recibe la cadena operando
+    mov     rcx,0   ;Esto lo agregue dsp, si se rompe sacar.
     mov     rcx,operando_inicial
     sub     rsp,32
     call    gets
@@ -199,6 +207,7 @@ add		rsp,32
 leer_archivo:
     ;Se encarga de leer el archivo e ir actualizando la matriz con los datos que va hallando.
  leer_registro:
+    mov     rcx,0   ;Esto lo agregue dsp, si se rompe sacar.
     mov     rcx,registro            ;Param 1: dir area de memoria donde va a copiar.
     mov     rdx,17                  ;Param 2: longitud del registro. Osea de lo que va a recibir. 2bytes para los dos chars del dia, 1byte para la semana y 20 para la descripcion.
     mov     r8,1                    ;Param 3: Cantidad de registros. En realidad creo que es de a cuantos bytes tiene que leer. De a uno. uno por uno.
@@ -221,21 +230,31 @@ add		rsp,32
     cmp     byte[registro_valido],'S'         ; Si el registro no es valido, ignorarlo y leer el proximo.
     jne     leer_registro            ; El fread se encarga de avanzar las lineas a leer, no hace falta decir que lea la prox linea o algo asi. Asi que mandamos a leer denuevo asi noma
 
-;mov     rcx,msj_imprimo_operando_archivo
-;mov     rdx,operando_archivo
-;sub     rsp,32
-;call    printf
-;add     rsp,32   
+mov     rcx,msj_imprimo_operando_archivo
+mov     rdx,operando_archivo
+sub     rsp,32
+call    printf
+add     rsp,32   
 
-;mov     rcx,msj_imprimo_operador
-;mov     rdx,operador
-;sub     rsp,32
-;call    printf
-;add     rsp,32   
+mov     rcx,msj_imprimo_operador
+mov     rdx,operador
+sub     rsp,32
+call    printf
+add     rsp,32   
 
         ; YA TENGO LOS DATOS NECESARIOS. ACA DEBERIA HACER LA OPERACION.
+    mov     al,[operador]
+    cmp     al,[equis]
+    je      asdf
 
     jmp     leer_registro            ; Volvemo a leer la siguiente linea 
+ asdf:
+    mov 	rcx,msj_tengo_x
+    sub		rsp,32
+    call	puts  
+    add		rsp,32
+
+
 
     cerrar_archivos:
     mov     rcx,[handle_datos]
