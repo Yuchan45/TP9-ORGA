@@ -31,6 +31,14 @@ section     .data  ; Variables con valor inicial
     equis                           db      'X'
 
 
+    op_incial_test                           db      '1234567890123456'
+    op_reg_test                              db      '9876543210987654'
+    caracter                                 db      '1'
+    contador_caracter                        dq       0
+    mensaje_chars_uno                        db      'Hay %lli unos en el string.',0
+
+ 
+
 	;*** Mensajes para debug
 	msj_inicio                       db "Iniciando...",0
 	msj_apertura_ok                  db " *** Se ha abierto el archivo exitosamente *** ",10,0
@@ -55,7 +63,7 @@ section     .data  ; Variables con valor inicial
     ;
 
 section     .bss  ; Variables sin valor inicial
-    operando_inicial            resb    500
+    operando_inicial            resb    50
     dato_valido		            resb	1
     operando_inicial_valido     resb    1
     ;registro_test		resb	17
@@ -66,12 +74,12 @@ section     .text
 main:
 
 ; volver_a_solicitar:
-;    call    solicitar_operando_inicial
-;mov     rcx,imprimo_operando_inicial
-;mov     rdx,operando_inicial
-;sub     rsp,32
-;call    printf
-;add     rsp,32
+    call    solicitar_operando_inicial
+mov     rcx,imprimo_operando_inicial
+mov     rdx,operando_inicial
+sub     rsp,32
+call    printf
+add     rsp,32
 
 ;    call    validar_operando_inicial
 ;    cmp     byte[dato_valido],'N'
@@ -111,7 +119,7 @@ abrir_archivo:
 solicitar_operando_inicial:
     ; --- Solicito ingreso del "Operando inicial" ---
     ;Printf mensaje de ingreso de operando
-    ;mov     rcx,msj_ingresar_operando_inicial
+    mov     rcx,msj_ingresar_operando_inicial
     sub     rsp,32
     call    printf
     add     rsp,32
@@ -230,6 +238,7 @@ add		rsp,32
     cmp     byte[registro_valido],'S'         ; Si el registro no es valido, ignorarlo y leer el proximo.
     jne     leer_registro            ; El fread se encarga de avanzar las lineas a leer, no hace falta decir que lea la prox linea o algo asi. Asi que mandamos a leer denuevo asi noma
 
+
 mov     rcx,msj_imprimo_operando_archivo
 mov     rdx,operando_archivo
 sub     rsp,32
@@ -243,19 +252,40 @@ call    printf
 add     rsp,32   
 
         ; YA TENGO LOS DATOS NECESARIOS. ACA DEBERIA HACER LA OPERACION.
-    mov     al,[operador]
-    cmp     al,[equis]
-    je      asdf
+mov		rcx,msj_inicio
+sub		rsp,32
+call	puts
+add		rsp,32
+
+    mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0. Podriamos usar el rsi como contador de long_texto. Pero para el ejemplo mejor no.
+    cmp_char:
+    cmp     byte[operando_inicial + rsi],0 ; Texto tiene el inicio del campo texto, y rsi (indice) seria el desplazamiento. Estoy obteniendo caracter por caracter. caracter = 1byte = 8bits.
+    je      fin_str ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
+
+    ; Ahora necesito ver si el caracter por el que voy es el ingresado para contarlo.
+    mov     al,[operando_inicial + rsi] ; Necesito guardar el caracter en un registro xq dsp voy a hacer un cmp, y el cmp compara registro vs memoria.
+    cmp     al,[caracter] ; Elegi "AL" xq el al es un reg de 8 bits, y un caracter tiene 8 bits, pero puede ser al, bl ,cl, etc...
+    jne     sig_char
+    inc qword[contador_caracter] ; contador_caracter ++
+
+    sig_char:
+    inc     rsi ; rsi++
+    jmp     cmp_char ; Jmp incondicional a un rotulo que pongo ahora (Si, codie hasta el jmp y ahora pongo un rotulo a donde quiero ir).
+
+fin_str:
+    mov     rcx,mensaje_chars_uno
+    mov     rdx,[contador_caracter]  ; Si ves raro estom de que este en rcx y rdc, mira el ppt que te muestra como usar el printf. printf imprime lo que hay en el rcx, y el rdx, r8, etc son los parametros del printf.
+    sub     rsp,32
+    call    printf
+    add     rsp,32
+    jmp     cerrar_archivos
+
+
+
+
+
 
     jmp     leer_registro            ; Volvemo a leer la siguiente linea 
- asdf:
-    mov 	rcx,msj_tengo_x
-    sub		rsp,32
-    call	puts  
-    add		rsp,32
-
-
-
     cerrar_archivos:
     mov     rcx,[handle_datos]
 	sub		rsp,32
