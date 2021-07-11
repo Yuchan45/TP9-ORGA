@@ -36,7 +36,6 @@ section     .data  ; Variables con valor inicial
     op_incial_test                           db      '1234567890123456',0
     op_reg_test                              db      '9876543210987654',0
     caracter                                 db      '1',0
-    uno                                 db      '1',0
     contador_caracter                        dq       0
     contador_caracter2                       dq       0
     mensaje_chars_uno                        db      'Hay %lli unos en el string.',0
@@ -44,19 +43,20 @@ section     .data  ; Variables con valor inicial
  
 
 	;*** Mensajes para debug
-	msj_inicio                       db "Iniciando...",0
-	msj_apertura_ok                  db " *** Se ha abierto el archivo exitosamente *** ",10,0
-    msj_cierre_ok                    db " *** Se ha cerrado el archivo exitosamente *** ",10,0
-	msj_guarde_operando_inicial      db " - Operando inicial guardado - ",0
-	msj_leyendo     	             db	"leyendo...",0
+	msj_inicio                       db  "Iniciando...",0
+	msj_apertura_ok                  db  " *** Se ha abierto el archivo exitosamente *** ",10,0
+    msj_cierre_ok                    db  " *** Se ha cerrado el archivo exitosamente *** ",10,0
+	msj_guarde_operando_inicial      db  " - Operando inicial guardado - ",0
+	msj_leyendo     	             db	 "leyendo...",0
+    msj_formateador     	         db	 "  ",10,0
     imprimo_operando_inicial         db  "-Operando inicial ingresado: %s",10,0
     msj_resultado                    db  "-Resultado parcial:          %s",10,0
     msj_imprimo_operando_archivo     db  "-Operando del archivo:       %s",10,0
     msj_imprimo_operador             db  "-Operador del archivo:       %s",10,0
-    msj_tengo_x                      db "-Operacion a realizar:       X (XOR)",0
-    msj_tengo_o                      db "-Operacion a realizar:       O (OR)",0
-    msj_tengo_n                      db "-Operacion a realizar:       N (AND)",0
-    msj_problema                     db "Problema...",0
+    msj_tengo_x                      db  "-Operacion a realizar:       X (XOR)",0
+    msj_tengo_o                      db  "-Operacion a realizar:       O (OR)",0
+    msj_tengo_n                      db  "-Operacion a realizar:       N (AND)",0
+    msj_problema                     db  "Problema...",0
     msj_operando_aux                 db  "-Operando auxiliar: %s",10,0
 
 
@@ -65,7 +65,7 @@ section     .data  ; Variables con valor inicial
     registro                    times   0   db  ''
         operando_archivo        times   16  db  ' '   ; -Operando (16 digitos)
         operador                times	1	db ' '     ; -Operador (1 digito). 1Byte. 8Bits
-        ;EOL			            times	1	db ' '	;Byte para guardar el fin de linea q está en el archivo
+        ;EOL			        times	1	db ' '	;Byte para guardar el fin de linea q está en el archivo
         ;ZERO_BINA		        times	1	db ' '	;Byte para guardar el 0 binario que agrega la fgets
     ;
 
@@ -73,7 +73,6 @@ section     .bss  ; Variables sin valor inicial
     operando_inicial            resb    50
     dato_valido		            resb	1
     operando_inicial_valido     resb    1
-    ;registro_test		resb	17
     registro_valido             resb    1
     aux_operando                resb    50
 
@@ -81,26 +80,18 @@ section     .text
 
 main:
 
-; volver_a_solicitar:
+ volver_a_solicitar:
     call    solicitar_operando_inicial
-;    call    validar_operando_inicial
-;    cmp     byte[dato_valido],'N'
-;    je      volver_a_solicitar
+    call    validar_operando_inicial
+    cmp     byte[dato_valido],'N'
+    je      volver_a_solicitar
 
 
     call    abrir_archivo
     cmp     qword[handle_datos],0    ; Error de apertura?
     jle     error_al_abrir_archivo
-mov		rcx,msj_apertura_ok  ; printf - Apertura Listado ok.
-sub		rsp,32
-call	puts
-add		rsp,32
 
-mov     rcx,imprimo_operando_inicial
-mov     rdx,operando_inicial
-sub     rsp,32
-call    printf
-add     rsp,32
+    call    imprimo_apertura_exitosa
 
     call    leer_archivo
 
@@ -234,9 +225,9 @@ leer_archivo:
     add     rsp,32 
 
     cmp     rax,0                   ; El rax va a tener 0 cuando el fread lea un linea vacia. Osea el fin del archivo.
-    jle     cerrar_archivos                     ; EOF
+    jle     cerrar_archivos         ; EOF
 
-mov 	rcx,msj_leyendo
+mov 	rcx,msj_formateador
 sub		rsp,32
 call	puts  
 add		rsp,32
@@ -244,7 +235,7 @@ add		rsp,32
     ; ******* ESTO DE VALIDAR NO HACE FALTA CREO ***********
     call    validar_registro                  ; Rutina interna para validar si la linea leida es valida. Devuelve 'S' en la variable "esValid" en caso de valido, y 'N' en caso contrario.
     cmp     byte[registro_valido],'S'         ; Si el registro no es valido, ignorarlo y leer el proximo.
-    jne     leer_registro            ; El fread se encarga de avanzar las lineas a leer, no hace falta decir que lea la prox linea o algo asi. Asi que mandamos a leer denuevo asi noma
+    jne     leer_registro                     ; El fread se encarga de avanzar las lineas a leer, no hace falta decir que lea la prox linea o algo asi. Asi que mandamos a leer denuevo asi noma
 
 
 mov     rcx,msj_imprimo_operando_archivo
@@ -352,11 +343,6 @@ operacion_or:
 
     fin_str_or:
     ; Ahora tengo que pisar el contenido de operando_inicial con el aux_operando. Porque hay que seguir iterando y realizando operaciones luego.
-;    mov     rcx,msj_operando_aux
-;    mov     rdx,aux_operando  
-;    sub     rsp,32
-;    call    printf
-;    add     rsp,32
     ; Piso el contenido de operando_inicio con el de aux_operando
     mov     rcx,16                 ;Indico cuandos bytes tengo que copiar
     lea     rsi,[aux_operando]     ; Origen
@@ -396,11 +382,6 @@ operacion_xor:
 
     fin_str_xor:
     ; Ahora tengo que pisar el contenido de operando_inicial con el aux_operando. Porque hay que seguir iterando y realizando operaciones luego.
-;    mov     rcx,msj_operando_aux
-;    mov     rdx,aux_operando  
-;    sub     rsp,32
-;    call    printf
-;    add     rsp,32
     ; Piso el contenido de operando_inicio con el de aux_operando
     mov     rcx,16                 ;Indico cuandos bytes tengo que copiar
     lea     rsi,[aux_operando]     ; Origen
@@ -413,6 +394,27 @@ operacion_xor:
     add     rsp,32
 
     ret ; Ret del operacion_xor
+
+
+imprimo_apertura_exitosa:
+;----------- Prints ----------    
+    mov 	rcx,msj_formateador
+    sub		rsp,32
+    call	puts  
+    add		rsp,32    
+    mov		rcx,msj_apertura_ok  ; printf - Apertura Listado ok.
+    sub		rsp,32
+    call	puts
+    add		rsp,32
+
+    mov     rcx,imprimo_operando_inicial
+    mov     rdx,operando_inicial
+    sub     rsp,32
+    call    printf
+    add     rsp,32
+    ret
+;----------- Prints ---------- 
+
 
 
 validar_registro:
@@ -428,7 +430,12 @@ error_al_abrir_archivo:
 	add		rsp,32
 	jmp		fin_de_programa
 
+
 cerrar_archivos:
+mov 	rcx,msj_formateador
+sub		rsp,32
+call	puts  
+add		rsp,32
     mov     rcx,[handle_datos]
 	sub		rsp,32
     call    fclose
