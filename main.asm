@@ -58,6 +58,7 @@ section     .data  ; Variables con valor inicial
     msj_tengo_n                      db  "-Operacion a realizar:       N (AND)",0
     msj_problema                     db  "Problema...",0
     msj_operando_aux                 db  "-Operando auxiliar: %s",10,0
+    msj_operador_archivo_invalido    db  "Operador de archivo invalido...",0
 
 
 
@@ -260,7 +261,12 @@ add     rsp,32
     cmp     al,[opr_and]
     je      hacer_and
 
-jmp     cerrar_archivos  ; Si no encotrne letra valida, cierro todo.
+
+mov		rcx,msj_operador_archivo_invalido  
+sub		rsp,32
+call	puts
+add		rsp,32
+    jmp     cerrar_archivos  ; Si el operador no es X o N o O. Cierro todo.
 
 hacer_xor:
 mov		rcx,msj_tengo_x  
@@ -292,10 +298,10 @@ next:
 
     
 operacion_and:
-    mov     rsi,0 ; rsi es un registro indice. Lo inicializo en 0.
+    mov     rsi,0                               ; rsi es un registro indice. Lo inicializo en 0.
     cmp_char_and:
     cmp     byte[operando_inicial + rsi],0 
-    je      fin_str_and ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
+    je      fin_str_and                         ; Salta a la etiqueta fin_string si cmp da 0, osea si llegue al final.
 
     ; Ahora realizo la operacion entre las cadenas[i] de ambos operandos y copio su resultado en un auxiliar (el cual luego pisara el operando inicial)
     mov     al,[operando_inicial + rsi] 
@@ -308,7 +314,7 @@ operacion_and:
 
     fin_str_and:
     ; Ahora tengo que pisar el contenido de operando_inicial con el aux_operando. Porque hay que seguir iterando y realizando operaciones luego.
-;    mov     rcx,msj_operando_aux
+;    mov     rcx,msj_operando_aux   ; DEBUG
 ;    mov     rdx,aux_operando  
 ;    sub     rsp,32
 ;    call    printf
